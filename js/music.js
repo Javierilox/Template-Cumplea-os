@@ -1,5 +1,5 @@
 /* ==========================================================================
-   REPRODUCTOR HÍBRIDO SIN ANUNCIOS (Audio Directo Piped + Respaldo YouTube)
+   REPRODUCTOR DE MÚSICA YOUTUBE + BUSCADOR (js/music.js - Corregido)
    ========================================================================== */
 
 let tracks = (typeof MUSIC_TRACKS !== 'undefined') ? MUSIC_TRACKS : [];
@@ -7,9 +7,10 @@ let currentTrackIndex = 0;
 let isPlaying = false;
 let isShuffle = false;
 let isRepeat = false;
-let usingDirectAudio = false; // Indica si estamos usando el stream limpio sin anuncios
+let usingDirectAudio = false;
 let ytPlayer = null;
 let isYtReady = false;
+let pendingPlay = false;
 let progressInterval = null;
 
 // Elementos del DOM de index.html
@@ -34,7 +35,7 @@ const ytSearchInput = document.getElementById('yt-search-input');
 const ytSearchBtn = document.getElementById('yt-search-btn');
 const ytSearchResults = document.getElementById('yt-search-results');
 
-// 1. Extraer stream de audio directo SIN ANUNCIOS desde Piped API
+// 1. Extraer stream de audio limpio (sin anuncios) desde Piped API
 async function getAdFreeAudioStream(videoId) {
     const pipedInstances = [
         "https://pipedapi.kavin.rocks",
@@ -54,7 +55,6 @@ async function getAdFreeAudioStream(videoId) {
             const data = await res.json();
 
             if (data.audioStreams && data.audioStreams.length > 0) {
-                // Ordenamos por mejor calidad de audio compatible
                 const bestStream = data.audioStreams.find(s => s.mimeType.includes('audio/mp4')) || data.audioStreams[0];
                 if (bestStream && bestStream.url) {
                     return bestStream.url;
@@ -67,7 +67,7 @@ async function getAdFreeAudioStream(videoId) {
     return null;
 }
 
-// 2. Configurar YouTube No-Cookie como respaldo
+// 2. Configurar el contenedor de YouTube
 function setupHiddenPlayerContainer() {
     let container = document.getElementById('yt-hidden-player');
     if (!container) {
@@ -88,7 +88,7 @@ window.onYouTubeIframeAPIReady = function () {
     ytPlayer = new YT.Player('yt-hidden-player', {
         height: '220',
         width: '220',
-        host: 'https://www.youtube-nocookie.com', // Reduce rastreo y anuncios personalizados
+        host: 'https://www.youtube-nocookie.com',
         videoId: firstId,
         playerVars: {
             'playsinline': 1,
@@ -128,14 +128,20 @@ function extractYouTubeId(track) {
     return match ? match[1] : null;
 }
 
-// 3. Seleccionar y reproducir canción (Priorizando Audio Limpio Sin Anuncios)
+// 3. Selección y reproducción con índices validados (Solución al salto)
 async function selectAndPlayTrack(index) {
+    if (!tracks || tracks.length === 0) return;
+
+    // Control estricto de límites del arreglo
+    if (index < 0) index = tracks.length - 1;
+    if (index >= tracks.length) index = 0;
+
     currentTrackIndex = index;
     loadTrackUI(currentTrackIndex);
+    
     const track = tracks[currentTrackIndex];
     const ytId = extractYouTubeId(track);
 
-    // Detener ambos reproductores antes de cambiar
     if (audioPlayer) {
         audioPlayer.pause();
         audioPlayer.src = "";
@@ -144,7 +150,6 @@ async function selectAndPlayTrack(index) {
         ytPlayer.stopVideo();
     }
 
-    // A) Si es un archivo MP3 local (ej. assets/music/cancion1.mp3)
     if (track.src && track.src.endsWith('.mp3')) {
         usingDirectAudio = true;
         audioPlayer.src = track.src;
@@ -152,7 +157,6 @@ async function selectAndPlayTrack(index) {
         return;
     }
 
-    // B) Intentamos obtener el stream directo sin anuncios de YouTube
     if (ytId) {
         const cleanStreamUrl = await getAdFreeAudioStream(ytId);
         if (cleanStreamUrl && audioPlayer) {
@@ -161,22 +165,23 @@ async function selectAndPlayTrack(index) {
             audioPlayer.volume = volumeSlider ? parseFloat(volumeSlider.value) : 0.8;
             try {
                 await audioPlayer.play();
-                return; // ¡Sonando sin anuncios!
+                return;
             } catch (err) {
                 console.warn("Pasando a reproductor de respaldo...");
             }
         }
 
-        // C) Si los servidores están ocupados, usa el IFrame de respaldo
         usingDirectAudio = false;
         if (isYtReady && ytPlayer && ytPlayer.loadVideoById) {
             ytPlayer.loadVideoById(ytId);
             ytPlayer.playVideo();
+        } else {
+            pendingPlay = true;
         }
     }
 }
 
-// Eventos del reproductor <audio> HTML5 (Sin anuncios)
+// Eventos de audio HTML5
 if (audioPlayer) {
     audioPlayer.addEventListener('play', () => {
         if (!usingDirectAudio) return;
@@ -231,9 +236,11 @@ function updatePlayPauseUI() {
 }
 
 function nextTrack() {
-    currentTrackIndex = isShuffle
-        ? Math.floor(Math.random() * tracks.length)
-        : (currentTrackIndex + 1) % tracks.length;
+    if (isShuffle) {
+        currentTrackIndex = Math.floor(Math.random() * tracks.length);
+    } else {
+        currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
+    }
     selectAndPlayTrack(currentTrackIndex);
 }
 
@@ -242,23 +249,29 @@ function prevTrack() {
     selectAndPlayTrack(currentTrackIndex);
 }
 
+// 4. Renderizado de la Playlist con clase activa sincronizada
 function renderPlaylist() {
     if (!playlistContainer) return;
     playlistContainer.innerHTML = '';
+
     tracks.forEach((track, index) => {
         const ytId = extractYouTubeId(track);
         const coverUrl = track.cover || `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`;
+        const isActive = index === currentTrackIndex;
+
         const li = document.createElement('li');
-        li.className = `playlist-item ${index === currentTrackIndex ? 'active' : ''}`;
-        li.style.cssText = 'display:flex; align-items:center; padding:10px; border-radius:10px; cursor:pointer; margin-bottom:8px;';
+        li.className = `playlist-item ${isActive ? 'active' : ''}`;
+        li.style.cssText = `display:flex; align-items:center; padding:10px; border-radius:10px; cursor:pointer; margin-bottom:8px; background: ${isActive ? 'rgba(255, 107, 157, 0.15)' : 'transparent'}; border: ${isActive ? '1px solid #ff6b9d' : '1px solid transparent'}; transition:0.2s;`;
+        
         li.innerHTML = `
-            <img src="${coverUrl}" alt="${track.title}" style="width:48px; height:48px; border-radius:8px; object-fit:cover;">
+            <img src="${coverUrl}" alt="${track.title}" style="width:48px; height:48px; border-radius:8px; object-fit:cover; flex-shrink:0;">
             <div style="flex:1; margin-left:12px; overflow:hidden;">
                 <h4 style="margin:0; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${track.title}</h4>
                 <p style="margin:2px 0 0; font-size:0.8rem; opacity:0.75;">${track.artist}</p>
             </div>
-            <span style="font-size:0.8rem; opacity:0.75;">${track.duration || ''}</span>
+            <span style="font-size:0.8rem; opacity:0.75; flex-shrink:0;">${track.duration || ''}</span>
         `;
+        
         li.addEventListener('click', () => selectAndPlayTrack(index));
         playlistContainer.appendChild(li);
     });
@@ -303,12 +316,144 @@ function formatTime(seconds) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
+// 5. Buscador en YouTube
+async function searchYouTubeSongs() {
+    const query = ytSearchInput.value.trim();
+    if (!query) return;
+
+    ytSearchResults.classList.remove('hidden');
+    ytSearchResults.innerHTML = `<li style="padding:10px; text-align:center;">🔎 Buscando "${query}" en YouTube...</li>`;
+
+    const directMatch = query.match(/(?:v=|youtu\.be\/|embed\/)([0-9A-Za-z_-]{11})/);
+    if (directMatch) {
+        const videoId = directMatch[1];
+        try {
+            const metaRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+            const meta = await metaRes.json();
+            addAndPlaySearchedSong({
+                title: meta.title || "Canción de YouTube",
+                artist: meta.author_name || "YouTube",
+                youtubeId: videoId,
+                cover: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                duration: ""
+            });
+        } catch (e) {
+            addAndPlaySearchedSong({
+                title: "Canción de YouTube",
+                artist: "YouTube",
+                youtubeId: videoId,
+                cover: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                duration: ""
+            });
+        }
+        ytSearchResults.classList.add('hidden');
+        ytSearchInput.value = '';
+        return;
+    }
+
+    const searchQuery = `${query} audio OR lyrics`;
+    const pipedServers = [
+        "https://pipedapi.kavin.rocks",
+        "https://pipedapi.tokhmi.xyz",
+        "https://pipedapi.moomoo.me"
+    ];
+
+    for (const server of pipedServers) {
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 4000);
+
+            const res = await fetch(`${server}/search?q=${encodeURIComponent(searchQuery)}&filter=videos`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+
+            if (!res.ok) continue;
+            const data = await res.json();
+            const items = (data.items || []).filter(item => item.url && item.url.includes("v=")).slice(0, 6);
+
+            if (items.length > 0) {
+                renderSearchResults(items.map(item => ({
+                    videoId: item.url.split('v=')[1].substring(0, 11),
+                    title: item.title,
+                    artist: item.uploaderName || 'YouTube',
+                    duration: item.duration ? formatTime(item.duration) : '',
+                    thumbnail: `https://i.ytimg.com/vi/${item.url.split('v=')[1].substring(0, 11)}/hqdefault.jpg`
+                })));
+                return;
+            }
+        } catch (err) {}
+    }
+
+    ytSearchResults.innerHTML = `
+        <li style="padding:12px; font-size:0.85rem; text-align:center;">
+            💡 Pega directamente el link de YouTube de la canción arriba y presiona <strong>Buscar</strong> para reproducirla al instante.
+        </li>`;
+}
+
+function renderSearchResults(items) {
+    ytSearchResults.innerHTML = '';
+    items.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'yt-result-item';
+        li.innerHTML = `
+            <img src="${item.thumbnail}" alt="${item.title}" style="width:45px; height:45px; border-radius:6px; object-fit:cover; flex-shrink:0;">
+            <div style="flex:1; margin-left:10px; overflow:hidden;">
+                <strong style="display:block; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.title}</strong>
+                <span style="font-size:0.75rem; opacity:0.75;">${item.artist} ${item.duration ? '• ' + item.duration : ''}</span>
+            </div>
+            <button type="button" style="background:#ff6b9d; color:#fff; border:none; border-radius:15px; padding:5px 12px; cursor:pointer; font-size:0.8rem; font-weight:600; flex-shrink:0;">▶ Sonar</button>
+        `;
+
+        li.addEventListener('click', () => {
+            addAndPlaySearchedSong({
+                title: item.title,
+                artist: item.artist,
+                youtubeId: item.videoId,
+                cover: item.thumbnail,
+                duration: item.duration
+            });
+            ytSearchResults.classList.add('hidden');
+            ytSearchInput.value = '';
+        });
+
+        ytSearchResults.appendChild(li);
+    });
+}
+
+function addAndPlaySearchedSong(newTrack) {
+    const existingIndex = tracks.findIndex(t => extractYouTubeId(t) === newTrack.youtubeId);
+    if (existingIndex !== -1) {
+        selectAndPlayTrack(existingIndex);
+    } else {
+        tracks.push(newTrack);
+        selectAndPlayTrack(tracks.length - 1);
+    }
+}
+
+// 6. Inicialización de eventos
 document.addEventListener('DOMContentLoaded', () => {
     renderPlaylist();
     loadTrackUI(0);
+
     if (btnPlayPause) btnPlayPause.addEventListener('click', togglePlayPause);
     if (btnNext) btnNext.addEventListener('click', nextTrack);
     if (btnPrev) btnPrev.addEventListener('click', prevTrack);
+
+    if (btnShuffle) {
+        btnShuffle.addEventListener('click', () => {
+            isShuffle = !isShuffle;
+            btnShuffle.classList.toggle('active', isShuffle);
+        });
+    }
+
+    if (btnRepeat) {
+        btnRepeat.addEventListener('click', () => {
+            isRepeat = !isRepeat;
+            btnRepeat.classList.toggle('active', isRepeat);
+        });
+    }
+
     if (progressBar) {
         progressBar.addEventListener('input', (e) => {
             if (usingDirectAudio && audioPlayer.duration) {
@@ -318,10 +463,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
     if (volumeSlider) {
         volumeSlider.addEventListener('input', (e) => {
             if (audioPlayer) audioPlayer.volume = parseFloat(e.target.value);
             if (isYtReady && ytPlayer) ytPlayer.setVolume(e.target.value * 100);
+        });
+    }
+
+    if (ytSearchBtn) ytSearchBtn.addEventListener('click', searchYouTubeSongs);
+    if (ytSearchInput) {
+        ytSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchYouTubeSongs();
+            }
         });
     }
 });
