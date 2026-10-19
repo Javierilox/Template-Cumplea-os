@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Feliz Cumpleaños, Cochi! 🎂✨</title>
+
+    <!-- Fuentes de Google: 'Poppins' para la interfaz y 'Dancing Script' para títulos festivos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Hoja de estilos principal -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Estilos integrados para el Buscador de Canciones de YouTube -->
+    <style>
+        .yt-search-container {
+            margin-bottom: 16px;
+        }
+        .yt-search-box {
+            display: flex;
+            gap: 8px;
+        }
+        .yt-search-box input {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.1);
+            color: inherit;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .yt-search-box input:focus {
+            border-color: #ff6b9d;
+        }
+        .yt-search-box button {
+            padding: 10px 18px;
+            border-radius: 25px;
+            border: none;
+            background: linear-gradient(135deg, #ff6b9d, #ff8e53);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .yt-search-box button:hover {
+            transform: scale(1.05);
+        }
+        .yt-search-results {
+            list-style: none;
+            padding: 8px;
+            margin-top: 8px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 12px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .yt-result-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .yt-result-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         FONDO ANIMADO (Globos, Confeti y Brillos)
+         ========================================== -->
+    <div id="background-animations" aria-hidden="true"></div>
+
+    <!-- ==========================================
+         BARRA DE NAVEGACIÓN
+         ========================================== -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="#inicio" class="nav-logo">🎂 Cumple de Cochi</a>
+            
+            <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menú">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <nav class="nav-menu" id="nav-menu">
+                <a href="#inicio" class="nav-link active">Inicio</a>
+                <a href="#galeria" class="nav-link">📸 Galería</a>
+                <a href="#puzzle" class="nav-link">🧩 Puzzle</a>
+                <a href="#musica" class="nav-link">🎵 Música</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- ==========================================
+             PORTADA PRINCIPAL (HERO)
+             ========================================== -->
+        <section id="inicio" class="hero-section">
+            <div class="hero-card">
+                <span class="hero-badge">✨ Hoy celebramos un día muy especial ✨</span>
+                <h1 class="hero-title">¡Feliz Cumpleaños, Cochi!</h1>
+                <p class="hero-message">
+                    Que este nuevo año de vida esté lleno de momentos inolvidables, risas infinitas y sueños cumplidos. 
+                    Esta página fue hecha con mucho cariño especialmente para ti. 💖
+                </p>
+
+                <!-- Pastel de cumpleaños animado con CSS -->
+                <div class="cake-container" id="birthday-cake" title="¡Haz clic para pedir un deseo!">
+                    <div class="cake">
+                        <div class="plate"></div>
+                        <div class="layer layer-bottom"></div>
+                        <div class="layer layer-middle"></div>
+                        <div class="layer layer-top"></div>
+                        <div class="icing"></div>
+                        <div class="candle">
+                            <div class="flame" id="candle-flame"></div>
+                        </div>
+                    </div>
+                    <p class="cake-hint">✨ Toca la vela para pedir un deseo ✨</p>
+                </div>
+
+                <div class="hero-actions">
+                    <a href="#galeria" class="btn-primary" id="btn-celebrate">
+                        ¡Comenzar la Celebración! 🎉
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             APARTADO 1: GALERÍA DE IMÁGENES
+             ========================================== -->
+        <section id="galeria" class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Nuestros Mejores Momentos 📸</h2>
+                <p class="section-subtitle">Un recorrido por nuestros recuerdos favoritos</p>
+
+                <!-- Botones para cambiar entre Cuadrícula y Presentación -->
+                <div class="view-toggle">
+                    <button class="toggle-btn active" id="btn-grid-view">
+                        🔲 Vista Cuadrícula
+                    </button>
+                    <button class="toggle-btn" id="btn-slide-view">
+                        🎞️ Modo Presentación
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modo 1: Vista de Cuadrícula (Se rellena desde gallery.js) -->
+            <div id="gallery-grid" class="gallery-grid"></div>
+
+            <!-- Modo 2: Vista de Presentación / Carrusel (Oculto por defecto) -->
+            <div id="gallery-slideshow" class="gallery-slideshow hidden">
+                <div class="slideshow-wrapper">
+                    <button class="slide-nav prev" id="prev-slide" aria-label="Anterior">❮</button>
+                    
+                    <div class="slide-content">
+                        <img id="slide-img" src="" alt="Recuerdo de cumpleaños">
+                        <div class="slide-caption">
+                            <h3 id="slide-title">Título del recuerdo</h3>
+                            <p id="slide-desc">Descripción del recuerdo</p>
+                        </div>
+                    </div>
+
+                    <button class="slide-nav next" id="next-slide" aria-label="Siguiente">❯</button>
+                </div>
+                <!-- Puntos indicadores del carrusel -->
+                <div id="slide-indicators" class="slide-indicators"></div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             APARTADO 2: JUEGO DE PUZZLE DESLIZANTE
+             ========================================== -->
+        <section id="puzzle" class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Desafío de Puzzle 🧩</h2>
+                <p class="section-subtitle">
+                    Desliza las piezas con el dedo o haz clic en las piezas junto al espacio vacío para armar la foto
+                </p>
+            </div>
+
+            <div class="puzzle-wrapper">
+                <!-- Barra de controles del Puzzle -->
+                <div class="puzzle-controls">
+                    <!-- Selector de foto de la galería -->
+                    <div class="control-group">
+                        <label for="puzzle-image-select">Foto:</label>
+                        <select id="puzzle-image-select" class="puzzle-select"></select>
+                    </div>
+
+                    <!-- Selector de dificultad -->
+                    <div class="difficulty-buttons">
+                        <button class="diff-btn active" data-size="3">Fácil (3x3)</button>
+                        <button class="diff-btn" data-size="4">Medio (4x4)</button>
+                        <button class="diff-btn" data-size="5">Difícil (5x5)</button>
+                    </div>
+
+                    <!-- Estadísticas -->
+                    <div class="puzzle-stats">
+                        <span class="stat-badge">⏱️ Tiempo: <strong id="puzzle-timer">00:00</strong></span>
+                        <span class="stat-badge">🎯 Movimientos: <strong id="puzzle-moves">0</strong></span>
+                    </div>
+
+                    <button id="btn-shuffle-puzzle" class="btn-secondary">
+                        🔄 Mezclar de nuevo
+                    </button>
+                </div>
+
+                <!-- Zona de juego: Tablero + Vista previa -->
+                <div class="puzzle-play-area">
+                    <!-- Tablero interactivo (soporta clic y deslizamiento táctil/mouse) -->
+                    <div id="puzzle-board" class="puzzle-board"></div>
+
+                    <!-- Imagen guía de referencia -->
+                    <div class="puzzle-preview-card">
+                        <h4>Vista de Referencia</h4>
+                        <img id="puzzle-preview-img" src="" alt="Vista previa del puzzle">
+                        <p class="preview-tip">💡 Puedes deslizar hacia arriba, abajo, izquierda o derecha.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ventana emergente al ganar el puzzle -->
+            <div id="puzzle-win-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h3>🎉 ¡Felicidades, Cochi! 🎉</h3>
+                    <p>¡Lograste armar el recuerdo completo!</p>
+                    <p class="modal-stats" id="win-stats"></p>
+                    <button id="btn-close-modal" class="btn-primary">Seguir Jugando ✨</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             APARTADO 3: REPRODUCTOR DE MÚSICA (ESTILO SPOTIFY + YOUTUBE)
+             ========================================== -->
+        <section id="musica" class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Playlist Especial 🎵</h2>
+                <p class="section-subtitle">Canciones que suenan a ti y a nuestros mejores momentos</p>
+            </div>
+
+            <div class="music-player-layout">
+                <!-- Reproductor Principal -->
+                <div class="spotify-card">
+                    <div class="vinyl-wrapper">
+                        <div class="vinyl-disc" id="vinyl-disc">
+                            <img id="current-track-cover" src="https://i.ytimg.com/vi/uSzn0nAntro/hqdefault.jpg" alt="Portada de la canción">
+                            <div class="vinyl-center-hole"></div>
+                        </div>
+                    </div>
+
+                    <div class="track-info">
+                        <h3 id="current-track-title">Selecciona una canción</h3>
+                        <p id="current-track-artist">Playlist de Cochi</p>
+                    </div>
+
+                    <!-- Barra de progreso -->
+                    <div class="progress-container">
+                        <span id="current-time">0:00</span>
+                        <input type="range" id="progress-bar" class="progress-slider" value="0" min="0" max="100" step="0.1">
+                        <span id="total-duration">0:00</span>
+                    </div>
+
+                    <!-- Botones de reproducción -->
+                    <div class="player-controls">
+                        <button id="btn-shuffle-music" class="ctrl-btn small" title="Aleatorio">🔀</button>
+                        <button id="btn-prev-track" class="ctrl-btn" title="Anterior">⏮</button>
+                        <button id="btn-play-pause" class="ctrl-btn play-main" title="Reproducir / Pausar">▶</button>
+                        <button id="btn-next-track" class="ctrl-btn" title="Siguiente">⏭</button>
+                        <button id="btn-repeat-music" class="ctrl-btn small" title="Repetir">🔁</button>
+                    </div>
+
+                    <!-- Control de Volumen -->
+                    <div class="volume-container">
+                        <span>🔈</span>
+                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="0.8">
+                        <span>🔊</span>
+                    </div>
+
+                    <!-- Reproductor de YouTube oculto (maneja el stream de audio en segundo plano) -->
+                    <div id="yt-hidden-player" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden;"></div>
+                    
+                    <!-- Elemento de audio HTML5 de respaldo -->
+                    <audio id="audio-player" preload="metadata"></audio>
+                </div>
+
+                <!-- Lista de canciones (Playlist) + Buscador de YouTube -->
+                <div class="playlist-card">
+                    <h3 class="playlist-heading">🎶 Lista de Canciones</h3>
+
+                    <!-- Buscador de canciones en YouTube -->
+                    <div class="yt-search-container">
+                        <div class="yt-search-box">
+                            <input type="text" id="yt-search-input" placeholder="🔍 Buscar canción en YouTube o pegar link..." />
+                            <button id="yt-search-btn" type="button">Buscar</button>
+                        </div>
+                        <ul id="yt-search-results" class="yt-search-results hidden"></ul>
+                    </div>
+
+                    <ul id="playlist-container" class="playlist-list">
+                        <!-- Las canciones se cargan automáticamente desde data.js y music.js -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ==========================================
+         PIE DE PÁGINA
+         ========================================== -->
+    <footer class="footer">
+        <p>Hecho con mucho ❤️ para el cumpleaños de <strong>Cochi</strong> ✨</p>
+    </footer>
+
+    <!-- ==========================================
+         ARCHIVOS JAVASCRIPT (En orden de carga)
+         ========================================== -->
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/gallery.js"></script>
+    <script src="js/puzzle.js"></script>
+    <script src="js/music.js"></script>
+</body>
+</html>
