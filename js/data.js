@@ -113,7 +113,7 @@ const MUSIC_TRACKS = [
         title: "BTS (방탄소년단) - 'Home'",
         artist: "BTS • Easy Lyrics ✨",
         cover: "https://i.ytimg.com/vi/0oljzhY3KOI/hqdefault.jpg",
-        src: "https://www.youtube.com/watch?v=0oljzhY3KOI",
+        src: "https://youtu.be/ghJURdZKq3I",
         youtubeId: "0oljzhY3KOI",
         duration: "3:55"
     },
