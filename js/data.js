@@ -108,7 +108,7 @@ const MUSIC_TRACKS = [
         youtubeId: "uSzn0nAntro",
         duration: "4:42"
     },
-    {
+    /*{
         id: 2,
         title: "BTS (방탄소년단) - 'Home'",
         artist: "BTS • Easy Lyrics ✨",
@@ -116,7 +116,7 @@ const MUSIC_TRACKS = [
         src: "https://www.youtube.com/watch?v=0oljzhY3KOI",
         youtubeId: "0oljzhY3KOI",
         duration: "3:55"
-    },
+    },*/
     {
         id: 3,
         title: "wave to earth - love.",
